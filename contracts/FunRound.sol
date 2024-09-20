@@ -9,18 +9,17 @@ contract FunRound {
     
     struct Player {
         uint256 balance;
-        bool isWinner;
+        bool hasPlayed;
     }
     
     mapping(address => Player) public players;
     address[] public playerList;
 
-    uint256 public randomResult;
-
     event Deposit(address indexed player, uint256 amount);
     event WinningsPaid(address indexed winner, uint256 amount);
     event FeeCollected(uint256 feeAmount);
-    event SessionStarted(address indexed player1, address indexed player2);
+    event GameStarted(address indexed player1, address indexed player2);
+    event GameEnded(address indexed winner);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
@@ -45,24 +44,32 @@ contract FunRound {
         emit Deposit(msg.sender, depositAfterFee);
 
         if (playerList.length == MAX_PLAYERS) {
-            emit SessionStarted(playerList[0], playerList[1]);
-            declareWinner();
+            emit GameStarted(playerList[0], playerList[1]);
         }
     }
 
-    function declareWinner() private {
-        require(playerList.length == MAX_PLAYERS, "Not enough players");
-        
-        // Generate pseudo-random number
-        randomResult = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, playerList)));
-        
-        address winner = playerList[randomResult % MAX_PLAYERS];
+    function submitGameResult(address winner) public {
+        require(playerList.length == MAX_PLAYERS, "Game hasn't started");
+        require(msg.sender == playerList[0] || msg.sender == playerList[1], "Only players can submit result");
+        require(winner == playerList[0] || winner == playerList[1], "Invalid winner address");
+        require(!players[msg.sender].hasPlayed, "You have already submitted the result");
+
+        players[msg.sender].hasPlayed = true;
+
+        if (players[playerList[0]].hasPlayed && players[playerList[1]].hasPlayed) {
+            finalizeGame(winner);
+        }
+    }
+
+    function finalizeGame(address winner) private {
         uint256 winnings = players[playerList[0]].balance + players[playerList[1]].balance;
         players[winner].balance = 0;
-        players[winner].isWinner = true;
+        players[playerList[0]].hasPlayed = false;
+        players[playerList[1]].hasPlayed = false;
 
         payable(winner).transfer(winnings);
         emit WinningsPaid(winner, winnings);
+        emit GameEnded(winner);
 
         // Reset for next game
         delete players[playerList[0]];
