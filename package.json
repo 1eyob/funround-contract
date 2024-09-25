@@ -11,9 +11,14 @@
   "description": "",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.10"
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "hardhat": "^2.22.11"
   },
   "dependencies": {
-    "@chainlink/contracts": "^1.2.0"
+    "@chainlink/contracts": "^1.2.0",
+    "@truffle/contract": "^4.6.31",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2",
+    "web3": "^4.13.0"
   }
 }
